@@ -2,9 +2,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Scanner;
+import java.util.*;
 
 public class VttSrtConverter {
     public static void main(String[] args) {
@@ -41,7 +39,20 @@ public class VttSrtConverter {
 
             clearTop(lines);
 
-            ArrayList<String> clearedLines = swapLines(clearLines(lines));
+
+            String[] tempLines = joinLines(clearLines(lines));
+            ArrayList<String> finalLines = new ArrayList<>();
+            Collections.addAll(finalLines, tempLines);
+
+
+            ArrayList<String> toDelete = new ArrayList<>();
+            for (String s : finalLines) {
+                if (s.isEmpty()) {
+                    toDelete.add(s);
+                }
+            }
+            finalLines.removeAll(toDelete);
+
 
             //Set new name for output converted file
             String newFileName = input;
@@ -50,7 +61,6 @@ public class VttSrtConverter {
             } else if (input.contains(".srt")) {
                 newFileName = input.replace(".srt", "fixed.srt");
             }
-
             //create a new file and check if the name already exists
             File f = new File(newFileName);
             if (f.exists() && !f.isDirectory()) {
@@ -60,14 +70,16 @@ public class VttSrtConverter {
                 //write down the new clearedList
                 try {
                     BufferedWriter convertedFile = Files.newBufferedWriter(Paths.get(newFileName));
-                    for (String s : clearedLines) {
+                    for (String s : finalLines) {
                         convertedFile.write(s + "\n");
+
                     }
+                    convertedFile.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
-        } while(true);
+        } while (true);
     }
 
     //remove the top lines in the vtt file
@@ -86,45 +98,62 @@ public class VttSrtConverter {
     public static ArrayList<String> clearLines(ArrayList<String> lines) {
         ArrayList<String> clearedLines = new ArrayList<>();
         for (String s : lines) {
-            //delete unwanted strings from the lines
+            //delete unwanted strings from the lines and convert . in ,
             if (s.contains("<c.white><c.mono_sans>") || s.contains("</c.mono_sans></c.white>")) {
                 String clearLine = s.replaceAll("<c.white><c.mono_sans>", "");
                 String clearLine2 = clearLine.replaceAll("</c.mono_sans></c.white>", "");
                 clearedLines.add(clearLine2);
             } else if (s.contains("  position:")) {
                 String[] splitString = s.split("  position:");
-                clearedLines.add(splitString[0]);
+                String dotToComma = splitString[0].replace('.', ',');
+                clearedLines.add(dotToComma);
             } else {
+
                 clearedLines.add(s);
             }
         }
         return clearedLines;
     }
 
-    public static ArrayList<String> swapLines(ArrayList<String> clearedLines) {
+    //join lines with the same time
+    public static String[] joinLines(ArrayList<String> clearedLines) {
         //takes in input the output of clearedLines
-        int indexTime = 1;
-        for (String s : clearedLines) {
-            if (indexTime < clearedLines.size() - 7) {
-                if (s.length() > 28) {
+        String[] tempArrayLines = new String[clearedLines.size()];
+        tempArrayLines = clearedLines.toArray(tempArrayLines);
+
+
+        for (int indexLine = 1; indexLine < tempArrayLines.length; indexLine++) {
+            if (indexLine < clearedLines.size() - 3) {
+                //is the string contain the time
+                if (tempArrayLines[indexLine].matches("[0-9]{2}:[0-9]{2}(.*)")) {
                     //check the first part of (the time) if is the same swap lines
-                    if ((clearedLines.get(indexTime).regionMatches(0, clearedLines.get(indexTime + 4), 0, 28)) &&
-                            (clearedLines.get(indexTime).regionMatches(0, clearedLines.get(indexTime + 8), 0, 28))) {
-                        Collections.swap(clearedLines, indexTime + 1, indexTime + 9);
-                        Collections.swap(clearedLines, indexTime + 5, indexTime + 9);
-                    } else if (clearedLines.get(indexTime).regionMatches(0, clearedLines.get(indexTime + 4), 0, 28)) {
-                        Collections.swap(clearedLines, indexTime + 1, indexTime + 5);
+                    if ((clearedLines.get(indexLine).regionMatches(0, clearedLines.get(indexLine + 4), 0, 28)) &&
+                            (clearedLines.get(indexLine).regionMatches(0, clearedLines.get(indexLine + 8), 0, 28))) {
+                        tempArrayLines[indexLine + 2] = tempArrayLines[indexLine + 5];
+                        tempArrayLines[indexLine + 3] = tempArrayLines[indexLine + 9] + "\n";
+
+                        for (int i = indexLine + 4; i <= indexLine + 9; i++) {
+                            tempArrayLines[i] = "";
+                        }
+
+                    } else if (clearedLines.get(indexLine).regionMatches(0, clearedLines.get(indexLine + 4), 0, 28)) {
+                        tempArrayLines[indexLine + 2] = tempArrayLines[indexLine + 5] + "\n";
+                        tempArrayLines[indexLine + 3] = "";
+                        tempArrayLines[indexLine + 4] = "";
+                        tempArrayLines[indexLine + 5] = "";
+
                     }
-                }
-                //is the string contain the time update the index
-                if (s.matches("[0-9]{2}:[0-9]{2}(.*)")) {
-                    indexTime = indexTime + 4;
+                } else if (tempArrayLines[indexLine].matches("[0-9]") ||
+                        (tempArrayLines[indexLine].matches("[0-9]{2}")) ||
+                        (tempArrayLines[indexLine].matches("[0-9]{3}")) ||
+                        (tempArrayLines[indexLine].matches("[0-9]{4}"))) {
+                    tempArrayLines[indexLine - 1] = tempArrayLines[indexLine - 1] + "\n";
                 }
 
             }
 
         }
-        return clearedLines;
-    }
 
+        return tempArrayLines;
+    }
 }
