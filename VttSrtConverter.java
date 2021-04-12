@@ -7,7 +7,7 @@ import java.util.*;
 public class VttSrtConverter {
     public static void main(String[] args) {
         String input;
-        System.out.println("Type \"exit\" to quite");
+        System.out.println("Type \"exit\" to quit");
         do {
 
             //input file from user
