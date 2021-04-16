@@ -40,10 +40,10 @@ public class VttSrtConverter {
             clearTop(lines);
 
 
+            //save the modified list and clear some white spaces
             String[] tempLines = joinLines(clearLines(lines));
             ArrayList<String> finalLines = new ArrayList<>();
             Collections.addAll(finalLines, tempLines);
-
 
             ArrayList<String> toDelete = new ArrayList<>();
             for (String s : finalLines) {
@@ -94,7 +94,7 @@ public class VttSrtConverter {
         lines.subList(0, lastLineToRemove).clear();
     }
 
-    //output a new arraylist cleared
+    //output a new arraylist cleared from extra words and simbols
     public static ArrayList<String> clearLines(ArrayList<String> lines) {
         ArrayList<String> clearedLines = new ArrayList<>();
         for (String s : lines) {
@@ -126,16 +126,17 @@ public class VttSrtConverter {
             if (indexLine < clearedLines.size() - 3) {
                 //is the string contain the time
                 if (tempArrayLines[indexLine].matches("[0-9]{2}:[0-9]{2}(.*)")) {
-                    //check the first part of (the time) if is the same swap lines
-                    if ((clearedLines.get(indexLine).regionMatches(0, clearedLines.get(indexLine + 4), 0, 28)) &&
-                            (clearedLines.get(indexLine).regionMatches(0, clearedLines.get(indexLine + 8), 0, 28))) {
-                        tempArrayLines[indexLine + 2] = tempArrayLines[indexLine + 5];
-                        tempArrayLines[indexLine + 3] = tempArrayLines[indexLine + 9] + "\n";
+                    if (indexLine < clearedLines.size()-9) {
+                        //check the first part of (the time) if is the same swap lines
+                        if ((clearedLines.get(indexLine).regionMatches(0, clearedLines.get(indexLine + 4), 0, 28)) &&
+                                (clearedLines.get(indexLine).regionMatches(0, clearedLines.get(indexLine + 8), 0, 28))) {
+                            tempArrayLines[indexLine + 2] = tempArrayLines[indexLine + 5];
+                            tempArrayLines[indexLine + 3] = tempArrayLines[indexLine + 9] + "\n";
 
-                        for (int i = indexLine + 4; i <= indexLine + 9; i++) {
-                            tempArrayLines[i] = "";
+                            for (int i = indexLine + 4; i <= indexLine + 9; i++) {
+                                tempArrayLines[i] = "";
+                            }
                         }
-
                     } else if (clearedLines.get(indexLine).regionMatches(0, clearedLines.get(indexLine + 4), 0, 28)) {
                         tempArrayLines[indexLine + 2] = tempArrayLines[indexLine + 5] + "\n";
                         tempArrayLines[indexLine + 3] = "";
